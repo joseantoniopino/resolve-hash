@@ -26,7 +26,7 @@ class GenerateNumbersCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $faker = Faker\Factory::create('es_ES');
-        
+
         $cleanNumbers = [];
         $io = new SymfonyStyle($input, $output);
 
