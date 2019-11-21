@@ -2,18 +2,14 @@
 
 namespace App\Command;
 
-use App\Exception\NotFindFilesException;
-use DirectoryIterator;
+use App\Exception\NoFilesFoundException;
+use App\Service\CsvService;
 use Faker\Factory;
 use Faker\Generator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-use Symfony\Component\Serializer\Serializer;
-use Symfony\Component\Serializer\Encoder\CsvEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 class GenerateNumbersCommand extends Command
@@ -21,38 +17,28 @@ class GenerateNumbersCommand extends Command
     protected static $defaultName = 'Generate:Numbers';
 
     protected $parameterBag;
-
     private $md5Filename;
     private $cleanFilename;
-    private $csvDirectory;
-    private $relativePath;
-    private $projectDir;
+    private $csvService;
 
-    public function __construct(ParameterBagInterface $parameterBag, $projectDir)
+    public function __construct(CsvService $csvService)
     {
-        $this->parameterBag = $parameterBag;
         $this->md5Filename = 'md5.csv';
         $this->cleanFilename = 'abierto.csv';
-        $this->csvDirectory = $this->parameterBag->get('csv_directory');
-        $this->projectDir = $projectDir;
-        $this->relativePath = str_replace($projectDir,'', $this->csvDirectory);
+        $this->csvService = $csvService;
         parent::__construct();
     }
 
     protected function configure()
     {
-        $this
-            ->setDescription('Use this command to generate 1000 phone numbers randomly.')
-            /*->addArgument('arg1', InputArgument::OPTIONAL, 'Argument description')
-            ->addOption('option1', null, InputOption::VALUE_NONE, 'Option description')*/
-        ;
+        $this->setDescription('Use this command to generate 1000 phone numbers randomly.');
     }
 
     /**
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int
-     * @throws NotFindFilesException
+     * @throws NoFilesFoundException
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -66,30 +52,17 @@ class GenerateNumbersCommand extends Command
             $cleanNumbers = $this->createNumbersRandomly($faker, $output);
             $encryptedNumbers = array_map([$this,'addMD5'],$cleanNumbers);
 
-            $this->createCSVFromArray($cleanNumbers, $this->cleanFilename,false );
-            $this->createCSVFromArray($encryptedNumbers, $this->md5Filename, true, 70 );
+            $this->csvService->createCSVFromArray($cleanNumbers, $this->cleanFilename,false );
+            $this->csvService->createCSVFromArray($encryptedNumbers, $this->md5Filename, true, 70 );
 
             $io->newLine();
 
-            $io->success('The files ' . $this->listFilesCreated() . ' are stored in ' . $this->relativePath);
+            $io->success('The files ' . $this->csvService->listFilesCreated() . ' are stored in ' . $this->csvService->getRelativePath());
         } else {
             $io->warning('The command has not been executed.');
         }
 
         return 0;
-    }
-
-    /**
-     * @param array $array
-     * @param string $filename
-     * @param bool $randomize
-     * @param int $maxNumber
-     */
-    private function createCSVFromArray(array $array, string $filename, bool $randomize, int $maxNumber = 0): void
-    {
-        $serializer = new Serializer([new ObjectNormalizer()], [new CsvEncoder()]);
-        $randomize ? $data = $serializer->encode(array_rand(array_flip($array), $maxNumber), 'csv') : $data = $serializer->encode($array, 'csv');
-        file_put_contents($this->csvDirectory . '/' . $filename, $data);
     }
 
     /**
@@ -109,34 +82,11 @@ class GenerateNumbersCommand extends Command
                 $progressBar->advance();
             } else {
                 $i--;
-                $progressBar->advance(-1);
             }
             unset($phone);
         }
         $progressBar->finish();
         return $cleanNumbers;
-    }
-
-    /**
-     * @return string
-     * @throws NotFindFilesException
-     */
-    private function listFilesCreated(): string
-    {
-        $filesCreated = [];
-        $dir = new DirectoryIterator($this->csvDirectory);
-        foreach ($dir as $file)
-        {
-            if ((!$file->isDot()) && ($file->getExtension() === 'csv')) {
-                $csv = $file->getFilename();
-                $filesCreated[] = $csv;
-            }
-        }
-
-        if (count($filesCreated) == 0)
-            throw new NotFindFilesException($this->csvDirectory);
-
-        return implode(', ', $filesCreated);
     }
 
     /**

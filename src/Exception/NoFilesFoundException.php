@@ -3,7 +3,7 @@
 namespace App\Exception;
 use Exception;
 
-class NotFindFilesException extends Exception
+class NoFilesFoundException extends Exception
 {
     public function __construct($pathToFiles)
     {
