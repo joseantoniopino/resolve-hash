@@ -17,7 +17,7 @@ Por último en /templates está la vista list y la vista index.
 
 ### Para usar la aplicación
 Simplemente bajar el repo hacer composer install y probar. 
-Dentro de la carpeta publi hay un .htaccess, usarlo o no ya depende vuestra configuración
+Dentro de la carpeta /public hay un .htaccess, usarlo o no ya depende vuestra configuración
 de servidor.
 
 En principio el único requisito es usar php > 7.1.
