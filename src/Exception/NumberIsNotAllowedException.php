@@ -3,7 +3,7 @@
 namespace App\Exception;
 use Exception;
 
-class NumberZeroIsNotAllowedException extends Exception
+class NumberIsNotAllowedException extends Exception
 {
     public function __construct()
     {

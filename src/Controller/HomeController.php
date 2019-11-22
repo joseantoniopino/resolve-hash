@@ -4,7 +4,7 @@ namespace App\Controller;
 
 use App\Exception\FileNoExistException;
 use App\Exception\NoFilesFoundException;
-use App\Exception\NumberZeroIsNotAllowedException;
+use App\Exception\NumberIsNotAllowedException;
 use App\Service\CsvService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,15 +30,14 @@ class HomeController extends AbstractController
      * @param CsvService $csvService
      * @param int $number
      * @return Response
-     * @throws NumberZeroIsNotAllowedException
+     * @throws NumberIsNotAllowedException
      * @throws FileNoExistException
      * @throws NoFilesFoundException
      */
     public function list(CsvService $csvService, $number = 5)
     {
-        // TODO: Hacer que pete si se pasa un número mayor a 70
-        if ($number == 0)
-            throw new NumberZeroIsNotAllowedException();
+        if ($number == 0 || $number > 70)
+            throw new NumberIsNotAllowedException();
 
         $open = $csvService->createArrayFromCSV('abierto.csv', $number);
         $closed = $csvService->createArrayFromCSV('md5.csv');
